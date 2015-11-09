@@ -445,44 +445,38 @@ class CParser(object):
         return result
 
     def pointer_specifier(self):
-        logging.debug("enter pointer_specifier")
         if self.token_equals(Token_POINTER):
             self.get_next_token()
-            result = self.pointer_specifier() + 'pointer to '
+            result = self.pointer_specifier() + 'a pointer to '
         else:
             result = self.variable_specifier()
-        logging.debug("exit pointer_specifier")
         return result
 
     def variable_specifier(self):
-        logging.debug("enter variable_specifier")
         result = self.name_specifier()
         if self.token_equals(Token_LEFT_PARENTHESIS):
             self.match_token(Token_LEFT_PARENTHESIS)
-            result += 'function returning '
+            result += 'a function returning '
             self.match_token(Token_RIGHT_PARENTHESIS)
         if self.token_equals(Token_LEFT_BRACKET):
             suffix = ''
             while self.token_equals(Token_LEFT_BRACKET):
                 self.match_token(Token_LEFT_BRACKET)
-                suffix += 'array of '
+                suffix += 'an array of '
                 self.match_token(Token_RIGHT_BRACKET)
             result += suffix
-        logging.debug("exit variable_specifier")
         return result
 
     def name_specifier(self):
-        logging.debug("enter name_specifier")
         if self.token_equals(Token_LEFT_PARENTHESIS):
             self.get_next_token()
             result = self.pointer_specifier()
             self.match_token(Token_RIGHT_PARENTHESIS)
         elif self.token_equals(Token_ID):
-            result = self.current_token.value + ' is a '
+            result = self.current_token.value + ' is '
             self.get_next_token()
         else:
             result = '<anonymous> is a '
-        logging.debug("exit name_specifier")
         return result
 
     def preprocessor_directive(self):

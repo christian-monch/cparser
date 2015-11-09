@@ -87,3 +87,29 @@ class TestCParser(TestCase):
         parser = CParser(ts)
         parser.get_next_token()
         parser.declaration()
+
+        # Check: char *(*(**foo[][])())[]
+        # Result: foo is an array of an array of a pointer to a pointer to a function returning a pointer to an array of a pointer to char
+        ts = TokenStream(TokenProvider([
+            Token(Token_INT, 'char'),
+            Token(Token_POINTER, '*'),
+            Token(Token_LEFT_PARENTHESIS, '('),
+            Token(Token_POINTER, '*'),
+            Token(Token_LEFT_PARENTHESIS, '('),
+            Token(Token_POINTER, '*'),
+            Token(Token_POINTER, '*'),
+            Token(Token_ID, 'foo'),
+            Token(Token_LEFT_BRACKET, '['),
+            Token(Token_RIGHT_BRACKET, ']'),
+            Token(Token_LEFT_BRACKET, '['),
+            Token(Token_RIGHT_BRACKET, ']'),
+            Token(Token_RIGHT_PARENTHESIS, ')'),
+            Token(Token_LEFT_PARENTHESIS, '('),
+            Token(Token_RIGHT_PARENTHESIS, ')'),
+            Token(Token_RIGHT_PARENTHESIS, ')'),
+            Token(Token_LEFT_BRACKET, '['),
+            Token(Token_RIGHT_BRACKET, ']')
+        ]))
+        parser = CParser(ts)
+        parser.get_next_token()
+        parser.declaration()
