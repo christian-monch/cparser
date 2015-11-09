@@ -5,7 +5,7 @@ __author__ = 'Christian Mönch'
 from collections import namedtuple
 
 
-Coordinate = namedtuple('Coordinate', ['line', 'column'])
+Coordinate = namedtuple('Coordinate', ['file', 'line', 'column'])
 
 
 class Span(object):
@@ -15,7 +15,7 @@ class Span(object):
 
 
 class Token(object):
-    def __init__(self, token_type, token_value, location=None):
+    def __init__(self, token_type, token_value, span=None):
         self.type = token_type
         self.value = token_value
-        self.location = location
+        self.location = span
