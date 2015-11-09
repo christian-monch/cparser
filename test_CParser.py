@@ -26,6 +26,10 @@ class TokenProvider(object):
 
 class TestCParser(TestCase):
     def test_declaration(self):
+        import logging
+
+        logging.basicConfig(level=logging.DEBUG)
+
         ts = TokenStream(TokenProvider([
             Token(Token_INT, 'int'),
             Token(Token_POINTER, '*'),
@@ -50,8 +54,8 @@ class TestCParser(TestCase):
             Token(Token_INT, 'int'),
             Token(Token_POINTER, '*'),
             Token(Token_ID, 'x'),
-            Token(Token_LEFT_PARENTHESIS, '['),
-            Token(Token_RIGHT_PARENTHESIS, ']')
+            Token(Token_LEFT_BRACKET, '['),
+            Token(Token_RIGHT_BRACKET, ']')
         ]))
         parser = CParser(ts)
         parser.get_next_token()
@@ -59,6 +63,20 @@ class TestCParser(TestCase):
 
         ts = TokenStream(TokenProvider([
             Token(Token_INT, 'int'),
+            Token(Token_LEFT_PARENTHESIS, '('),
+            Token(Token_POINTER, '*'),
+            Token(Token_ID, 'x'),
+            Token(Token_RIGHT_PARENTHESIS, ')'),
+            Token(Token_LEFT_PARENTHESIS, '('),
+            Token(Token_RIGHT_PARENTHESIS, ')')
+        ]))
+        parser = CParser(ts)
+        parser.get_next_token()
+        parser.declaration()
+
+        ts = TokenStream(TokenProvider([
+            Token(Token_INT, 'int'),
+            Token(Token_POINTER, '*'),
             Token(Token_LEFT_PARENTHESIS, '('),
             Token(Token_POINTER, '*'),
             Token(Token_ID, 'x'),
