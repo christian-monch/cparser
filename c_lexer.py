@@ -6,7 +6,12 @@ __author__ = 'Christian Mönch'
 
 
 import string
-from character_input import Coordinate
+
+
+EndMarker = '$end'
+
+WordStarter = string.ascii_letters + '_'
+WordContinuation = string.ascii_letters + string.digits + '_'
 
 
 class Span(object):
@@ -20,21 +25,24 @@ class Span(object):
 
 class Token(object):
 
-    Type_None               = 0
-    Type_Id                 = 1
-    Type_Left_Parenthesis   = 2
-    Type_Right_Parenthesis  = 3
-    Type_Left_Bracket       = 4
-    Type_Right_Bracket      = 5
-    Type_Left_Brace         = 6
-    Type_Right_Brace        = 7
-    Type_Integer            = 8
-    Type_Unsigned_Integer   = 9
-    Type_Long               = 10
-    Type_Unsigned_Long      = 11
-    Type_Float              = 12
-    Type_Comment            = 13
-    Type_Divide_Assign      = 14    # /=
+    Type_None               = 'None'
+    Type_Id                 = 'Id'
+    Type_Left_Parenthesis   = 'Left_Parenthesis'
+    Type_Right_Parenthesis  = 'Right_Parenthesis'
+    Type_Left_Bracket       = 'Left_Bracket'
+    Type_Right_Bracket      = 'Right_Bracket'
+    Type_Left_Brace         = 'Left_Brace'
+    Type_Right_Brace        = 'Right_Brace'
+    Type_Integer            = 'Integer'
+    Type_Unsigned_Integer   = 'Unsigned_Integer'
+    Type_Long               = 'Long'
+    Type_Unsigned_Long      = 'Unsigned_Long'
+    Type_Float              = 'Float'
+    Type_Comment            = 'Comment'
+    Type_Divide_Assign      = 'Divide_Assign'    # /=
+    Type_Plus_Assign        = 'Plus_Assign'      # +=
+    Type_Character          = 'Character'
+    Type_String             = 'String'
 
     def __init__(self, token_type, token_value, span=None):
         self.type = token_type
@@ -42,7 +50,7 @@ class Token(object):
         self.location = span
 
     def __repr__(self):
-        return 'Token(%d, %s, %s)' % (self.type, repr(self.value), repr(self.location))
+        return 'Token(%s, %s, %s)' % (self.type, repr(self.value), repr(self.location))
 
 
 class CLexer(object):
@@ -50,6 +58,48 @@ class CLexer(object):
     state_plain = 'plain'
     state_comment = 'comment'
     state_line_comment = 'line_comment'
+
+    DoubleToken = {
+        '/=': Token.Type_Divide_Assign,
+        '+=': Token.Type_Plus_Assign,
+        '-=': 'Minus_Assign',
+        '*=': 'Times_Assign',
+        '%=': 'Module_Assign',
+        '==': 'Equal',
+        '--': 'Decrement',
+        '++': 'Increment',
+        '||': 'Logic_Or',
+        '&&': 'Logic_And',
+        '>=': 'Greater_Equal',
+        '<=': 'Less_Equal'
+    }
+
+    SingleToken = {
+        '*': 'Times',
+        '+': 'Plus',
+        '-': 'Minus',
+        '/': 'Devide',
+        '%': 'Module',
+        '=': 'Assign',
+        '[': 'Left_Bracket',
+        ']': 'Right_Bracket',
+        '(': 'Left_Parenthesis',
+        ')': 'Right_Parenthesis',
+        '{': 'Left_Brace',
+        '}': 'Right_Brace',
+        '|': 'Or',
+        '&': 'And',
+        '^': 'Exor',
+        '~': 'Invert',
+        '!': 'Not',
+        ';': 'Semicolon',
+        ':': 'Colon',
+        ',': 'Comma',
+        '.': 'Dot',
+        '<': 'Less',
+        '>': 'Greater',
+        '?': 'Question_Mark',
+    }
 
     def __init__(self, character_stream):
         self.character_stream = character_stream
@@ -62,12 +112,33 @@ class CLexer(object):
         self.current_character = self.character_stream.get_next_object()
         return self.current_character
 
+    def get_next_value(self):
+        self.current_character = self.character_stream.get_next_object()
+        return self.current_value()
+
+    def current_value(self):
+        if self.current_character is not None:
+            return self.current_character.value
+        return EndMarker
+
     def look_ahead(self, count):
-        return self.character_stream.look_ahead(count)
+        character = self.character_stream.look_ahead(count)
+        if character is not None:
+            return character.value
+        return EndMarker
+
+    def look_ahead_value(self, count):
+        character = self.character_stream.look_ahead(count)
+        if character is not None:
+            return character.value
 
     def skip_whitespace(self):
         while self.current_character and self.current_character.value in string.whitespace:
             self.current_character = self.character_stream.get_next_object()
+
+    def create_token(self, token_type):
+        return Token(token_type, ''.join([x.value for x in self.current_token_elements]), Span(
+            self.current_token_elements[0].coordinate, self.current_token_elements[-1].coordinate))
 
     def get_next_token(self):
         if self.current_character is None:
@@ -80,132 +151,112 @@ class CLexer(object):
         return None
 
     def handle_plain(self):
-        if self.current_character.value == '/' and self.look_ahead(1).value == '*':
+        # Eat whitespace
+        while self.current_value() in string.whitespace:
+            self.get_next_character()
+
+        # Check comments
+        if self.current_value() == '/' and self.look_ahead_value(1) == '*':
             return self.read_block_comment()
-        token = Token(Token.Type_None, self.current_character.value, Span(
-            self.current_character.coordinate, self.current_character.coordinate))
+        if self.current_value() == '/' and self.look_ahead_value(1) == '/':
+            return self.read_line_comment()
+
+        # Check identifier and keywords
+        if self.current_value() in WordStarter:
+            self.current_token_elements = [self.current_character]
+            while self.get_next_value() in WordContinuation:
+                self.current_token_elements.append(self.current_character)
+            return self.create_token(Token.Type_Id)
+
+        # Check numbers
+        if self.current_value() in string.digits:
+            self.current_token_elements = [self.current_character]
+            while self.get_next_value() in string.digits:
+                self.current_token_elements.append(self.current_character)
+            return self.create_token(Token.Type_Integer)
+
+        # Check strings
+        if self.current_value() == '"':
+            return self.read_string_constant()
+
+        # Check chars
+        if self.current_value() == '\'':
+            return self.read_character_constant()
+
+        # Check double and single character token
+        if self.look_ahead_value(1):
+            double_value = self.current_value() + self.look_ahead_value(1)
+            if double_value in CLexer.DoubleToken:
+                self.current_token_elements = [self.current_character, self.get_next_character()]
+                self.get_next_character()
+                return self.create_token(CLexer.DoubleToken[double_value])
+        if self.current_value() in CLexer.SingleToken:
+            self.current_token_elements, key = [self.current_character], self.current_value()
+            self.get_next_character()
+            return self.create_token(CLexer.SingleToken[key])
+
+        # Check for end
+        if self.current_value() == '$end':
+            return None
+
+        # Unknown token
+        self.current_token_elements = [self.current_character]
         self.get_next_character()
-        return token
+        return self.create_token(Token.Type_None)
 
     def read_block_comment(self):
         self.current_token_elements = [self.current_character]
         self.current_token_elements.append(self.get_next_character())
-        self.get_next_character()
-        while self.current_character.value != '*' and self.look_ahead(1).value != '/':
+        while not (self.get_next_value() == '*' and self.look_ahead_value(1) == '/'):
+            if self.current_value() == '$end':
+                raise Exception('end of file in comment')
             self.current_token_elements.append(self.current_character)
-            self.get_next_character()
         self.current_token_elements.append(self.current_character)
         self.current_token_elements.append(self.get_next_character())
         self.get_next_character()
-        token = Token(Token.Type_Comment, ''.join([x.value for x in self.current_token_elements]), Span(
-            self.current_token_elements[0].coordinate, self.current_token_elements[-1].coordinate))
-        self.current_token_elements = []
-        return token
+        return self.create_token(Token.Type_Comment)
 
-x = """
-class CLexer(object):
+    def read_line_comment(self):
+        self.current_token_elements = [self.current_character]
+        self.current_token_elements.append(self.get_next_character())
+        while self.get_next_value() not in ('\n', '$end'):
+            self.current_token_elements.append(self.current_character)
+        return self.create_token(Token.Type_Comment)
 
-    state_plain = 'plain'
-    state_word = 'word'
-    state_number = 'number'
-    state_start_comment = 'start_comment'
-    state_block_comment = 'block_comment'
-    state_line_comment = 'line_comment'
+    def read_string_constant(self):
+        self.current_token_elements = [self.current_character]
+        while self.get_next_value() != '"':
+            if self.current_value() == '\\':
+                self.current_token_elements.append(self.get_next_character())
+            else:
+                self.current_token_elements.append(self.current_character)
+        self.current_token_elements.append(self.current_character)
+        self.get_next_character()
+        return self.create_token(Token.Type_String)
 
-    def __init__(self, byte_stream, name='<unknown>', max_push_back=1):
-        self.byte_stream = byte_stream
-        self.file_name = name
-        self.max_push_back = max_push_back
-        self.end_of_stream = False
-        self.current_line = 1
-        self.current_column = 0
-        self.current_byte = None
-        self.token_value = ''
-        self.token_type = 0
-        self.token_start = None
-        self.token_end = None
-        self.wrap_line = False
-        self.state = CLexer.state_plain
-        self.pushed_bytes = []
-        self.byte_track = []
-
-    def get_next_byte(self):
-        if self.pushed_bytes:
-            self.byte_track.append(self.pushed_bytes[0])
-            self.current_byte, self.current_line, self.current_column = self.pushed_bytes[0]
-            del self.pushed_bytes[0]
-            return self.current_byte
-        if self.end_of_stream is True:
-            self.current_byte = None
-            return None
-        self.byte_track.append((self.current_byte, self.current_column, self.current_line))
-        if self.wrap_line is True:
-            self.current_line += 1
-            self.current_column = 0
-        self.current_byte = self.byte_stream.read(1)
-        if self.current_byte == '':
-            self.end_of_stream = True
-            self.current_byte = None
+    def read_character_constant(self):
+        self.current_token_elements = [self.current_character]
+        self.get_next_character()
+        if self.current_value() == '\\':
+            self.current_token_elements.append(self.get_next_character())
         else:
-            if self.current_byte == '\n':
-                self.wrap_line = True
-            self.current_column += 1
-        return self.current_byte
-
-    def push_back_byte(self):
-        if len(self.pushed_bytes) >= self.max_push_back:
-            raise Exception('Maximum push back reached (%d bytes)' % self.max_push_back)
-        if self.byte_track:
-            self.current_byte, self.current_line, self.current_column = self.byte_track[0]
-            del self.byte_track[0]
-        else:
-            self.current_byte, self.current_line, self.current_column = (None, 1, 0)
-
-    def get_next_token(self):
-        # Make sure to read a character if this is the first call
-        if not self.end_of_stream and self.current_byte is None:
-            self.get_next_byte()
-        while not self.end_of_stream:
-            handler = getattr(self, 'handle_' + self.state)
-            result = handler(self)
-            if result:
-                return result
-        return None
-
-    def skip_white_space(self):
-        while not self.end_of_stream and self.current_byte in string.whitespace:
-            self.get_next_byte()
-
-    def record_token_start(self):
-        self.token_start = Coordinate(self.file_name, self.current_line, self.current_column)
-
-    def record_token_end(self):
-        self.token_end = Coordinate(self.file_name, self.current_line, self.current_column)
-
-    def create_token(self, token_type, token_value):
-        return Token(token_type, token_value, Span(self.token_start, self.token_end))
-
-    def handle_plain(self):
-        self.skip_white_space()
-        if self.current_byte == '_' or self.current_byte in string.ascii_letters:
-            self.record_token_start()
-            self.token_value = self.current_byte
-            return self.read_word()
-        if self.current_byte == '/':
-            self.record_token_start()
-            self.get_next_byte()
-            if self.current_byte == '*':
-                self.read_block_comment()
-            elif self.current_byte == '/':
-                self.read_line_comment()
-            elif self.current_byte == '=':
-                self.record_token_end()
-                return self.create_token(Token.Type_Divide_Assign, '/=')
-
-            return None
+            self.current_token_elements.append(self.current_character)
+        self.get_next_character()
+        if self.current_value() != '\'':
+            raise Exception('unterminated string constant:')
+        self.current_token_elements.append(self.current_character)
+        self.get_next_character()
+        return self.create_token(Token.Type_Character)
 
 
-    def handle_start_comment(self):
-        if self.current_byte == '/':
-            self.state = CLexer.state_line_comment
-"""
+if __name__ == '__main__':
+    import sys
+    from character_input import FileCharacterInput
+    from object_stream import ObjectStream
+
+    input_stream = ObjectStream(FileCharacterInput(sys.stdin, '<stdin>'))
+    lexer = CLexer(input_stream)
+    token = lexer.get_next_token()
+    while token is not None:
+        print token
+        token = lexer.get_next_token()
