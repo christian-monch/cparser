@@ -25,24 +25,25 @@ class Span(object):
 
 class Token(object):
 
-    Type_None               = 'None'
-    Type_Id                 = 'Id'
-    Type_Left_Parenthesis   = 'Left_Parenthesis'
-    Type_Right_Parenthesis  = 'Right_Parenthesis'
-    Type_Left_Bracket       = 'Left_Bracket'
-    Type_Right_Bracket      = 'Right_Bracket'
-    Type_Left_Brace         = 'Left_Brace'
-    Type_Right_Brace        = 'Right_Brace'
-    Type_Integer            = 'Integer'
-    Type_Unsigned_Integer   = 'Unsigned_Integer'
-    Type_Long               = 'Long'
-    Type_Unsigned_Long      = 'Unsigned_Long'
-    Type_Float              = 'Float'
-    Type_Comment            = 'Comment'
-    Type_Divide_Assign      = 'Divide_Assign'    # /=
-    Type_Plus_Assign        = 'Plus_Assign'      # +=
-    Type_Character          = 'Character'
-    Type_String             = 'String'
+    Type_None = 'None'
+    Type_Id = 'Id'
+    Type_Left_Parenthesis = 'Left_Parenthesis'
+    Type_Right_Parenthesis = 'Right_Parenthesis'
+    Type_Left_Bracket = 'Left_Bracket'
+    Type_Right_Bracket = 'Right_Bracket'
+    Type_Left_Brace = 'Left_Brace'
+    Type_Right_Brace = 'Right_Brace'
+    Type_Integer = 'Integer'
+    Type_Unsigned_Integer = 'Unsigned_Integer'
+    Type_Long = 'Long'
+    Type_Unsigned_Long = 'Unsigned_Long'
+    Type_Float = 'Float'
+    Type_Comment = 'Comment'
+    Type_Divide_Assign = 'Divide_Assign'
+    Type_Plus_Assign = 'Plus_Assign'
+    Type_Character = 'Character'
+    Type_String = 'String'
+    Type_Preprocessor_Directive = 'Preprocessor_Directive'
 
     def __init__(self, token_type, token_value, span=None):
         self.type = token_type
@@ -108,6 +109,9 @@ class CLexer(object):
         '\\t':  '\x09',
         '\\v':  '\x0b',
         '\\r':  '\x0d',
+        '\\"':  '"',
+        '\\\\':  '\\',
+        "\\'":  "'"
     }
 
     KeyWordTypes = {
@@ -131,14 +135,15 @@ class CLexer(object):
         'struct': 'Struct',
         'union': 'Union',
         'volatile': 'Volatile',
-        'register': 'Register'
+        'register': 'Register',
+        'return': 'Return',
+        'default': 'Default'
     }
 
     def __init__(self, character_stream):
         self.character_stream = character_stream
         self.current_character = None
         self.current_token_elements = []
-        self.state = CLexer.state_plain
         self.get_next_character()
 
     def get_next_character(self):
@@ -170,7 +175,11 @@ class CLexer(object):
             return character.value
 
     def skip_whitespace(self):
-        while self.current_character and self.current_character.value in string.whitespace:
+        while self.current_value() in string.whitespace:
+            self.get_next_character()
+
+    def skip_inline_whitespace(self):
+        while self.current_value() in string.whitespace and self.current_value() != '\n':
             self.get_next_character()
 
     def create_token(self, token_type):
@@ -178,20 +187,12 @@ class CLexer(object):
             self.current_token_elements[0].coordinate, self.current_token_elements[-1].coordinate))
 
     def get_next_token(self):
-        if self.current_character is None:
-            return None
-        while self.current_character:
-            handler = getattr(self, 'handle_' + self.state)
-            result = handler()
-            if result:
-                return result
-        return None
-
-    def handle_plain(self):
         # Eat whitespace
-        while self.current_value() in string.whitespace:
-            self.get_next_character()
+        self.skip_whitespace()
 
+        # Check preprocessor commands
+        if self.current_value() == '#' and self.current_character.coordinate.column == 1:
+            return self.read_preprocessor_directive()
         # Check comments
         if self.current_value() == '/' and self.look_ahead_value(1) == '*':
             return self.read_block_comment()
@@ -243,6 +244,30 @@ class CLexer(object):
         self.get_next_character()
         return self.create_token(Token.Type_None)
 
+    def read_word(self):
+        """
+        read a word: assumes that it is started on the first word character.
+        """
+        assert self.current_value() in WordStarter
+        word_token_elements = [self.current_character]
+        while self.get_next_value() in WordContinuation:
+            word_token_elements.append(self.current_character)
+        return word_token_elements
+
+    def read_preprocessor_directive(self):
+        """
+        Read a preprocessor directive, assumes that it is started on '#'. We read the line
+        line then.
+        """
+        assert self.current_value() == '#'
+        self.get_next_character()
+        self.skip_inline_whitespace()
+        self.current_token_elements = self.read_word()
+        while self.current_value() != '\n' and self.current_value() != EndMarker:
+            self.current_token_elements.append(self.current_character)
+            self.get_next_character()
+        return self.create_token(Token.Type_Preprocessor_Directive)
+
     def read_block_comment(self):
         self.current_token_elements = [self.current_character]
         self.current_token_elements.append(self.get_next_character())
@@ -279,12 +304,18 @@ class CLexer(object):
 
     def read_escaped_octal_code(self):
         digit_1 = self.current_value()
-        digit_2 = self.get_next_value()
+        digit_2 = self.look_ahead(1)
         if not digit_2 in string.octdigits:
-            raise Exception('not an octal digit in escape sequence: %s' % digit_2)
-        digit_3 = self.get_next_value()
+            self.current_character.value = chr(int(digit_1, 8))
+            self.current_token_elements.append(self.current_character)
+            return
+        self.get_next_character()
+        digit_3 = self.look_ahead(1)
         if not digit_3 in string.octdigits:
-            raise Exception('not an octal digit in escape sequence: %s' % digit_3)
+            self.current_character.value = chr(int('%s%s' % (digit_1, digit_2), 8))
+            self.current_token_elements.append(self.current_character)
+            return
+        self.get_next_character()
         self.current_character.value = chr(int('%s%s%s' % (digit_1, digit_2, digit_3), 8))
         self.current_token_elements.append(self.current_character)
 

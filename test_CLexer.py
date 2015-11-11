@@ -43,6 +43,10 @@ continuation line"
                 f();
                 while (8)
 
+#define werwerøwlkerklj dfsdfsdf
+
+#pragma werwerkljwerlkj
+
 
             }
         /*/  */

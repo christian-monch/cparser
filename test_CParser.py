@@ -113,3 +113,17 @@ class TestCParser(TestCase):
         parser = CParser(ts)
         parser.get_next_token()
         parser.declaration()
+
+    def test_declaration_2(self):
+        import logging
+
+        logging.basicConfig(level=logging.DEBUG)
+
+        ts = TokenStream(TokenProvider([
+            Token(Token_INT, 'int'),
+            Token(Token_POINTER, '*'),
+            Token(Token_ID, 'x')
+        ]))
+        parser = CParser(ts)
+        parser.get_next_token()
+        parser.declaration()
