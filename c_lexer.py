@@ -110,6 +110,30 @@ class CLexer(object):
         '\\r':  '\x0d',
     }
 
+    KeyWordTypes = {
+        'char': 'Char',
+        'const': 'Const',
+        'int': 'Int',
+        'long': 'Long',
+        'float': 'Float',
+        'double': 'Double',
+        'signed': 'Signed',
+        'unsigned': 'Unsigned',
+        'restricted': 'Restricted',
+        'if': 'If',
+        'while': 'While',
+        'do': 'Do',
+        'switch': 'Switch',
+        'break': 'Break',
+        'goto': 'Goto',
+        'void': 'Void',
+        'typedef': 'Typedef',
+        'struct': 'Struct',
+        'union': 'Union',
+        'volatile': 'Volatile',
+        'register': 'Register'
+    }
+
     def __init__(self, character_stream):
         self.character_stream = character_stream
         self.current_character = None
@@ -179,7 +203,9 @@ class CLexer(object):
             self.current_token_elements = [self.current_character]
             while self.get_next_value() in WordContinuation:
                 self.current_token_elements.append(self.current_character)
-            return self.create_token(Token.Type_Id)
+            # TODO: check for keyword
+            word = ''.join(x.value for x in self.current_token_elements)
+            return self.create_token(self.KeyWordTypes.get(word, Token.Type_Id))
 
         # Check numbers
         if self.current_value() in string.digits:
@@ -244,7 +270,7 @@ class CLexer(object):
         self.current_token_elements.append(self.current_character)
 
     def read_escaped_hex_code(self):
-        digit_1 = self.current_value
+        digit_1 = self.current_value()
         digit_2 = self.get_next_value()
         if not digit_2 in string.hexdigits:
             raise Exception('not a hexadecimal digit in escape sequence: %s' % digit_2)
@@ -252,7 +278,7 @@ class CLexer(object):
         self.current_token_elements.append(self.current_character)
 
     def read_escaped_octal_code(self):
-        digit_1 = self.current_value
+        digit_1 = self.current_value()
         digit_2 = self.get_next_value()
         if not digit_2 in string.octdigits:
             raise Exception('not an octal digit in escape sequence: %s' % digit_2)
@@ -267,6 +293,7 @@ class CLexer(object):
         if next_value == EndMarker:
             raise Exception('escape sequence terminated by end of file')
         if next_value == 'x':
+            self.get_next_character()
             self.read_escaped_hex_code()
             return
         elif next_value in string.octdigits:
@@ -292,7 +319,7 @@ class CLexer(object):
         self.current_token_elements = [self.current_character]
         self.get_next_character()
         if self.current_value() == '\\':
-            self.current_token_elements.append(self.get_next_character())
+            self.read_escape_sequence()
         else:
             self.current_token_elements.append(self.current_character)
         self.get_next_character()

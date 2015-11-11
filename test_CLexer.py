@@ -41,13 +41,18 @@ continuation line"
 
     ;       if (a == 2) {
                 f();
+                while (8)
+
+
             }
         /*/  */
 
         /**/
 
-        "One \000 \x8a \010 \111 more string!\\n"
+        "One \\000 \\x8a \\010 \\111 more string!\\n"
         'c'
+
+    'e' '\\000' '\\x8a' '\\010' '\\111'
 
     the last few words
 """))
