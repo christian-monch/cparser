@@ -101,6 +101,15 @@ class CLexer(object):
         '?': 'Question_Mark',
     }
 
+    # "\v\f\n\t\r" == '\x0b\x0c\x0a\x09\x0d'
+    EscapeSequences = {
+        '\\f':  '\x0c',
+        '\\n':  '\x0a',
+        '\\t':  '\x09',
+        '\\v':  '\x0b',
+        '\\r':  '\x0d',
+    }
+
     def __init__(self, character_stream):
         self.character_stream = character_stream
         self.current_character = None
@@ -110,10 +119,14 @@ class CLexer(object):
 
     def get_next_character(self):
         self.current_character = self.character_stream.get_next_object()
+        while self.current_character and self.current_character.value == '\\' and self.look_ahead_value(1) == '\n':
+            # Eat the continuation characters, first the backslash then the newline
+            self.current_character = self.character_stream.get_next_object()
+            self.current_character = self.character_stream.get_next_object()
         return self.current_character
 
     def get_next_value(self):
-        self.current_character = self.character_stream.get_next_object()
+        self.get_next_character()
         return self.current_value()
 
     def current_value(self):
@@ -134,7 +147,7 @@ class CLexer(object):
 
     def skip_whitespace(self):
         while self.current_character and self.current_character.value in string.whitespace:
-            self.current_character = self.character_stream.get_next_object()
+            self.get_next_character()
 
     def create_token(self, token_type):
         return Token(token_type, ''.join([x.value for x in self.current_token_elements]), Span(
@@ -196,7 +209,7 @@ class CLexer(object):
             return self.create_token(CLexer.SingleToken[key])
 
         # Check for end
-        if self.current_value() == '$end':
+        if self.current_value() == EndMarker:
             return None
 
         # Unknown token
@@ -208,7 +221,7 @@ class CLexer(object):
         self.current_token_elements = [self.current_character]
         self.current_token_elements.append(self.get_next_character())
         while not (self.get_next_value() == '*' and self.look_ahead_value(1) == '/'):
-            if self.current_value() == '$end':
+            if self.current_value() == EndMarker:
                 raise Exception('end of file in comment')
             self.current_token_elements.append(self.current_character)
         self.current_token_elements.append(self.current_character)
@@ -219,15 +232,56 @@ class CLexer(object):
     def read_line_comment(self):
         self.current_token_elements = [self.current_character]
         self.current_token_elements.append(self.get_next_character())
-        while self.get_next_value() not in ('\n', '$end'):
+        while self.get_next_value() not in ('\n', EndMarker):
             self.current_token_elements.append(self.current_character)
         return self.create_token(Token.Type_Comment)
+
+    def read_escaped_character(self, next_value):
+        escape_sequence = '\\' + next_value
+        if escape_sequence not in self.EscapeSequences:
+            raise Exception('unknown escape sequence: "%s"' % escape_sequence)
+        self.current_character.value = self.EscapeSequences[escape_sequence]
+        self.current_token_elements.append(self.current_character)
+
+    def read_escaped_hex_code(self):
+        digit_1 = self.current_value
+        digit_2 = self.get_next_value()
+        if not digit_2 in string.hexdigits:
+            raise Exception('not a hexadecimal digit in escape sequence: %s' % digit_2)
+        self.current_character.value = chr(int('%s%s' % (digit_1, digit_2), 16))
+        self.current_token_elements.append(self.current_character)
+
+    def read_escaped_octal_code(self):
+        digit_1 = self.current_value
+        digit_2 = self.get_next_value()
+        if not digit_2 in string.octdigits:
+            raise Exception('not an octal digit in escape sequence: %s' % digit_2)
+        digit_3 = self.get_next_value()
+        if not digit_3 in string.octdigits:
+            raise Exception('not an octal digit in escape sequence: %s' % digit_3)
+        self.current_character.value = chr(int('%s%s%s' % (digit_1, digit_2, digit_3), 8))
+        self.current_token_elements.append(self.current_character)
+
+    def read_escape_sequence(self):
+        next_value = self.get_next_value()
+        if next_value == EndMarker:
+            raise Exception('escape sequence terminated by end of file')
+        if next_value == 'x':
+            self.read_escaped_hex_code()
+            return
+        elif next_value in string.octdigits:
+            self.read_escaped_octal_code()
+            return
+        else:
+            self.read_escaped_character(next_value)
 
     def read_string_constant(self):
         self.current_token_elements = [self.current_character]
         while self.get_next_value() != '"':
+            if self.current_value() in ('\n', EndMarker):
+                raise Exception('string terminated by new line or end of file')
             if self.current_value() == '\\':
-                self.current_token_elements.append(self.get_next_character())
+                self.read_escape_sequence()
             else:
                 self.current_token_elements.append(self.current_character)
         self.current_token_elements.append(self.current_character)

@@ -28,6 +28,9 @@ efg
 /* An empty string */  a = "";
 
 
+    "This is a \\
+continuation line"
+
     --- -  /* This is another block
               comment. This time with
               many lines.
@@ -42,6 +45,9 @@ efg
         /*/  */
 
         /**/
+
+        "One \000 \x8a \010 \111 more string!\\n"
+        'c'
 
     the last few words
 """))
