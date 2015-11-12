@@ -9,7 +9,6 @@ import string
 
 
 EndMarker = '$end'
-
 WordStarter = string.ascii_letters + '_'
 WordContinuation = string.ascii_letters + string.digits + '_'
 
@@ -115,6 +114,7 @@ class CLexer(object):
     }
 
     KeyWordTypes = {
+        'bool': 'Bool',
         'char': 'Char',
         'const': 'Const',
         'int': 'Int',
@@ -137,21 +137,32 @@ class CLexer(object):
         'volatile': 'Volatile',
         'register': 'Register',
         'return': 'Return',
-        'default': 'Default'
+        'default': 'Default',
+        'short': 'Default',
+        'case': 'Case'
     }
 
     def __init__(self, character_stream):
         self.character_stream = character_stream
         self.current_character = None
         self.current_token_elements = []
+        self.ignore_continuation = False
         self.get_next_character()
+
+    def match_value(self, value):
+        if self.current_character:
+            if self.current_character.value == value:
+                return self.get_next_character()
+            raise Exception('unexpected character "%s", expected "%s"' % (self.current_character.value, value))
+        raise Exception('unexpected end of file, expected character "%s"' % value)
 
     def get_next_character(self):
         self.current_character = self.character_stream.get_next_object()
-        while self.current_character and self.current_character.value == '\\' and self.look_ahead_value(1) == '\n':
-            # Eat the continuation characters, first the backslash then the newline
-            self.current_character = self.character_stream.get_next_object()
-            self.current_character = self.character_stream.get_next_object()
+        if not self.ignore_continuation:
+            # Check for continuation characters and remove them
+            while self.current_character and self.current_character.value == '\\' and self.look_ahead_value(1) == '\n':
+                self.current_character = self.character_stream.get_next_object()
+                self.current_character = self.character_stream.get_next_object()
         return self.current_character
 
     def get_next_value(self):
@@ -204,7 +215,6 @@ class CLexer(object):
             self.current_token_elements = [self.current_character]
             while self.get_next_value() in WordContinuation:
                 self.current_token_elements.append(self.current_character)
-            # TODO: check for keyword
             word = ''.join(x.value for x in self.current_token_elements)
             return self.create_token(self.KeyWordTypes.get(word, Token.Type_Id))
 
@@ -256,11 +266,9 @@ class CLexer(object):
 
     def read_preprocessor_directive(self):
         """
-        Read a preprocessor directive, assumes that it is started on '#'. We read the line
-        line then.
+        Read a preprocessor directive, assumes we are already on the '#'.
         """
-        assert self.current_value() == '#'
-        self.get_next_character()
+        self.match_value('#')
         self.skip_inline_whitespace()
         self.current_token_elements = self.read_word()
         while self.current_value() != '\n' and self.current_value() != EndMarker:
@@ -269,22 +277,30 @@ class CLexer(object):
         return self.create_token(Token.Type_Preprocessor_Directive)
 
     def read_block_comment(self):
+        self.ignore_continuation = True
         self.current_token_elements = [self.current_character]
         self.current_token_elements.append(self.get_next_character())
         while not (self.get_next_value() == '*' and self.look_ahead_value(1) == '/'):
             if self.current_value() == EndMarker:
-                raise Exception('end of file in comment')
+                self.ignore_continuation = False
+                raise Exception('end of file in block comment')
             self.current_token_elements.append(self.current_character)
         self.current_token_elements.append(self.current_character)
         self.current_token_elements.append(self.get_next_character())
         self.get_next_character()
+        self.ignore_continuation = False
         return self.create_token(Token.Type_Comment)
 
     def read_line_comment(self):
+        self.ignore_continuation = True
         self.current_token_elements = [self.current_character]
         self.current_token_elements.append(self.get_next_character())
-        while self.get_next_value() not in ('\n', EndMarker):
+        while self.get_next_value() != '\n':
+            if self.current_value() == EndMarker:
+                self.ignore_continuation = False
+                raise Exception('end of file in line comment')
             self.current_token_elements.append(self.current_character)
+        self.ignore_continuation = False
         return self.create_token(Token.Type_Comment)
 
     def read_escaped_character(self, next_value):
@@ -334,7 +350,7 @@ class CLexer(object):
             self.read_escaped_character(next_value)
 
     def read_string_constant(self):
-        self.current_token_elements = [self.current_character]
+        self.current_token_elements = []
         while self.get_next_value() != '"':
             if self.current_value() in ('\n', EndMarker):
                 raise Exception('string terminated by new line or end of file')
@@ -342,13 +358,13 @@ class CLexer(object):
                 self.read_escape_sequence()
             else:
                 self.current_token_elements.append(self.current_character)
-        self.current_token_elements.append(self.current_character)
         self.get_next_character()
         return self.create_token(Token.Type_String)
 
     def read_character_constant(self):
-        self.current_token_elements = [self.current_character]
+        # skip the start tick
         self.get_next_character()
+        self.current_token_elements = []
         if self.current_value() == '\\':
             self.read_escape_sequence()
         else:
@@ -356,7 +372,7 @@ class CLexer(object):
         self.get_next_character()
         if self.current_value() != '\'':
             raise Exception('unterminated string constant:')
-        self.current_token_elements.append(self.current_character)
+        # skip the end tick
         self.get_next_character()
         return self.create_token(Token.Type_Character)
 
