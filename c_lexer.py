@@ -13,6 +13,80 @@ WordStarter = string.ascii_letters + '_'
 WordContinuation = string.ascii_letters + string.digits + '_'
 
 
+Token_NONE = 'None'
+Token_DIVIDE_ASSIGN = 'Divide_Assign'
+Token_PLUS_ASSIGN = 'Plus_Assign'
+Token_MINUS_ASSIGN = 'Minus_Assign'
+Token_TIMES_ASSIGN = 'Times_Assign'
+Token_MODULE_ASSIGN = 'Module_Assign'
+Token_EQUAL = 'Equal'
+Token_DECREMENT = 'Decrement'
+Token_INCREMENT = 'Increment'
+Token_LOGIC_OR = 'Logic_Or'
+Token_LOGIC_AND = 'Logic_And'
+Token_GREATER_EQUAL = 'Greater_Equal'
+Token_LESS_EQUAL = 'Less_Equal'
+Token_STRUCTURE_DEREFERENCE = 'Structure_Dereference'
+Token_TIMES = 'Times'
+Token_PLUS = 'Plus'
+Token_MINUS = 'Minus'
+Token_DEVIDE = 'Devide'
+Token_MODULE = 'Module'
+Token_ASSIGN = 'Assign'
+Token_LEFT_BRACKET = 'Left_Bracket'
+Token_RIGHT_BRACKET = 'Right_Bracket'
+Token_LEFT_PARENTHESIS = 'Left_Parenthesis'
+Token_RIGHT_PARENTHESIS = 'Right_Parenthesis'
+Token_LEFT_BRACE = 'Left_Brace'
+Token_RIGHT_BRACE = 'Right_Brace'
+Token_OR = 'Or'
+Token_AND = 'And'
+Token_EXOR = 'Exor'
+Token_INVERT = 'Invert'
+Token_NOT = 'Not'
+Token_SEMICOLON = 'Semicolon'
+Token_COLON = 'Colon'
+Token_COMMA = 'Comma'
+Token_DOT = 'Dot'
+Token_LESS = 'Less'
+Token_GREATER = 'Greater'
+Token_QUESTION_MARK = 'Question_Mark'
+Token_BOOL = 'Bool'
+Token_CHAR = 'Char'
+Token_CONST = 'Const'
+Token_INT = 'Int'
+Token_LONG = 'Long'
+Token_FLOAT = 'Float'
+Token_DOUBLE = 'Double'
+Token_SIGNED = 'Signed'
+Token_UNSIGNED = 'Unsigned'
+Token_RESTRICTED = 'Restricted'
+Token_IF = 'If'
+Token_WHILE = 'While'
+Token_DO = 'Do'
+Token_SWITCH = 'Switch'
+Token_BREAK = 'Break'
+Token_GOTO = 'Goto'
+Token_VOID = 'Void'
+Token_TYPEDEF = 'Typedef'
+Token_STRUCT = 'Struct'
+Token_UNION = 'Union'
+Token_VOLATILE = 'Volatile'
+Token_REGISTER = 'Register'
+Token_RETURN = 'Return'
+Token_DEFAULT = 'Default'
+Token_SHORT = 'Short'
+Token_CASE = 'Case'
+Token_INTEGER_CONSTANT = 'Integer_Constant'
+Token_CHARACTER_CONSTANT = 'Character_Constant'
+Token_STRING_CONSTANT = 'String_Constant'
+Token_ID = 'Id'
+Token_COMMENT = 'Comment'
+Token_PREPROCESSOR_DIRECTIVE = 'Preprocessor_Directive'
+Token_EXTERNAL = 'Extternal'
+Token_STATIC = 'Static'
+
+
 class Span(object):
     def __init__(self, start, end):
         self.start = start
@@ -23,26 +97,6 @@ class Span(object):
 
 
 class Token(object):
-
-    Type_None = 'None'
-    Type_Id = 'Id'
-    Type_Left_Parenthesis = 'Left_Parenthesis'
-    Type_Right_Parenthesis = 'Right_Parenthesis'
-    Type_Left_Bracket = 'Left_Bracket'
-    Type_Right_Bracket = 'Right_Bracket'
-    Type_Left_Brace = 'Left_Brace'
-    Type_Right_Brace = 'Right_Brace'
-    Type_Integer = 'Integer'
-    Type_Unsigned_Integer = 'Unsigned_Integer'
-    Type_Long = 'Long'
-    Type_Unsigned_Long = 'Unsigned_Long'
-    Type_Float = 'Float'
-    Type_Comment = 'Comment'
-    Type_Divide_Assign = 'Divide_Assign'
-    Type_Plus_Assign = 'Plus_Assign'
-    Type_Character = 'Character'
-    Type_String = 'String'
-    Type_Preprocessor_Directive = 'Preprocessor_Directive'
 
     def __init__(self, token_type, token_value, span=None):
         self.type = token_type
@@ -60,45 +114,46 @@ class CLexer(object):
     state_line_comment = 'line_comment'
 
     DoubleToken = {
-        '/=': Token.Type_Divide_Assign,
-        '+=': Token.Type_Plus_Assign,
-        '-=': 'Minus_Assign',
-        '*=': 'Times_Assign',
-        '%=': 'Module_Assign',
-        '==': 'Equal',
-        '--': 'Decrement',
-        '++': 'Increment',
-        '||': 'Logic_Or',
-        '&&': 'Logic_And',
-        '>=': 'Greater_Equal',
-        '<=': 'Less_Equal'
+        '/=': Token_DIVIDE_ASSIGN,
+        '+=': Token_PLUS_ASSIGN,
+        '-=': Token_MINUS_ASSIGN,
+        '*=': Token_TIMES_ASSIGN,
+        '%=': Token_MODULE_ASSIGN,
+        '==': Token_EQUAL,
+        '--': Token_DECREMENT,
+        '++': Token_INCREMENT,
+        '||': Token_LOGIC_OR,
+        '&&': Token_LOGIC_AND,
+        '>=': Token_GREATER_EQUAL,
+        '<=': Token_LESS_EQUAL,
+        '->': Token_STRUCTURE_DEREFERENCE
     }
 
     SingleToken = {
-        '*': 'Times',
-        '+': 'Plus',
-        '-': 'Minus',
-        '/': 'Devide',
-        '%': 'Module',
-        '=': 'Assign',
-        '[': 'Left_Bracket',
-        ']': 'Right_Bracket',
-        '(': 'Left_Parenthesis',
-        ')': 'Right_Parenthesis',
-        '{': 'Left_Brace',
-        '}': 'Right_Brace',
-        '|': 'Or',
-        '&': 'And',
-        '^': 'Exor',
-        '~': 'Invert',
-        '!': 'Not',
-        ';': 'Semicolon',
-        ':': 'Colon',
-        ',': 'Comma',
-        '.': 'Dot',
-        '<': 'Less',
-        '>': 'Greater',
-        '?': 'Question_Mark',
+        '*': Token_TIMES,
+        '+': Token_PLUS,
+        '-': Token_MINUS,
+        '/': Token_DEVIDE,
+        '%': Token_MODULE,
+        '=': Token_ASSIGN,
+        '[': Token_LEFT_BRACKET,
+        ']': Token_RIGHT_BRACKET,
+        '(': Token_LEFT_PARENTHESIS,
+        ')': Token_RIGHT_PARENTHESIS,
+        '{': Token_LEFT_BRACE,
+        '}': Token_RIGHT_BRACE,
+        '|': Token_OR,
+        '&': Token_AND,
+        '^': Token_EXOR,
+        '~': Token_INVERT,
+        '!': Token_NOT,
+        ';': Token_SEMICOLON,
+        ':': Token_COLON,
+        ',': Token_COMMA,
+        '.': Token_DOT,
+        '<': Token_LESS,
+        '>': Token_GREATER,
+        '?': Token_QUESTION_MARK
     }
 
     # "\v\f\n\t\r" == '\x0b\x0c\x0a\x09\x0d'
@@ -114,32 +169,34 @@ class CLexer(object):
     }
 
     KeyWordTypes = {
-        'bool': 'Bool',
-        'char': 'Char',
-        'const': 'Const',
-        'int': 'Int',
-        'long': 'Long',
-        'float': 'Float',
-        'double': 'Double',
-        'signed': 'Signed',
-        'unsigned': 'Unsigned',
-        'restricted': 'Restricted',
-        'if': 'If',
-        'while': 'While',
-        'do': 'Do',
-        'switch': 'Switch',
-        'break': 'Break',
-        'goto': 'Goto',
-        'void': 'Void',
-        'typedef': 'Typedef',
-        'struct': 'Struct',
-        'union': 'Union',
-        'volatile': 'Volatile',
-        'register': 'Register',
-        'return': 'Return',
-        'default': 'Default',
-        'short': 'Default',
-        'case': 'Case'
+        'bool': Token_BOOL,
+        'char': Token_CHAR,
+        'const': Token_CONST,
+        'int': Token_INT,
+        'long': Token_LONG,
+        'float': Token_FLOAT,
+        'double': Token_DOUBLE,
+        'signed': Token_SIGNED,
+        'unsigned': Token_UNSIGNED,
+        'restricted': Token_RESTRICTED,
+        'if': Token_IF,
+        'while': Token_WHILE,
+        'do': Token_DO,
+        'switch': Token_SWITCH,
+        'break': Token_BREAK,
+        'goto': Token_GOTO,
+        'void': Token_VOID,
+        'typedef': Token_TYPEDEF,
+        'struct': Token_STRUCT,
+        'union': Token_UNION,
+        'volatile': Token_VOLATILE,
+        'register': Token_REGISTER,
+        'return': Token_RETURN,
+        'default': Token_DEFAULT,
+        'short': Token_SHORT,
+        'case': Token_CASE,
+        'external': Token_EXTERNAL,
+        'static': Token_STATIC
     }
 
     def __init__(self, character_stream):
@@ -220,14 +277,14 @@ class CLexer(object):
             while self.get_next_value() in WordContinuation:
                 self.current_token_elements.append(self.current_character)
             word = ''.join(x.value for x in self.current_token_elements)
-            return self.create_token(self.KeyWordTypes.get(word, Token.Type_Id))
+            return self.create_token(self.KeyWordTypes.get(word, Token_ID))
 
         # Check numbers
         if self.current_value() in string.digits:
             self.current_token_elements = [self.current_character]
             while self.get_next_value() in string.digits:
                 self.current_token_elements.append(self.current_character)
-            return self.create_token(Token.Type_Integer)
+            return self.create_token(Token_INTEGER_CONSTANT)
 
         # Check strings
         if self.current_value() == '"':
@@ -256,7 +313,7 @@ class CLexer(object):
         # Unknown token
         self.current_token_elements = [self.current_character]
         self.get_next_character()
-        return self.create_token(Token.Type_None)
+        return self.create_token(Token_NONE)
 
     def read_word(self):
         """
@@ -278,7 +335,7 @@ class CLexer(object):
         while self.current_value() != '\n' and self.current_value() != EndMarker:
             self.current_token_elements.append(self.current_character)
             self.get_next_character()
-        return self.create_token(Token.Type_Preprocessor_Directive)
+        return self.create_token(Token_PREPROCESSOR_DIRECTIVE)
 
     def read_block_comment(self):
         self.ignore_continuation = True
@@ -293,7 +350,7 @@ class CLexer(object):
         self.current_token_elements.append(self.get_next_character())
         self.get_next_character()
         self.ignore_continuation = False
-        return self.create_token(Token.Type_Comment)
+        return self.create_token(Token_COMMENT)
 
     def read_line_comment(self):
         self.ignore_continuation = True
@@ -305,7 +362,7 @@ class CLexer(object):
                 raise Exception('end of file in line comment')
             self.current_token_elements.append(self.current_character)
         self.ignore_continuation = False
-        return self.create_token(Token.Type_Comment)
+        return self.create_token(Token_COMMENT)
 
     def read_escaped_character(self, next_value):
         escape_sequence = '\\' + next_value
@@ -365,7 +422,7 @@ class CLexer(object):
                 self.current_token_elements.append(self.current_character)
         end_coordinate = self.current_character.coordinate
         self.get_next_character()
-        return self.create_token(Token.Type_String, start_coordinate, end_coordinate)
+        return self.create_token(Token_STRING_CONSTANT, start_coordinate, end_coordinate)
 
     def read_character_constant(self):
         start_coordinate = self.current_character.coordinate
@@ -381,7 +438,7 @@ class CLexer(object):
         # skip the end tick
         end_coordinate = self.current_character.coordinate
         self.get_next_character()
-        return self.create_token(Token.Type_Character, start_coordinate, end_coordinate)
+        return self.create_token(Token_CHARACTER_CONSTANT, start_coordinate, end_coordinate)
 
 
 if __name__ == '__main__':

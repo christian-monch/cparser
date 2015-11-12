@@ -6,8 +6,8 @@ __author__ = 'Christian Mönch'
 
 from c_parser import *
 from collections import namedtuple
-from token_stream import TokenStream
-
+from object_stream import ObjectStream
+from character_input import StringCharacterInput
 
 Token = namedtuple('Token', ['type', 'value'])
 
@@ -25,92 +25,40 @@ class TokenProvider(object):
 
 
 class TestCParser(TestCase):
+
+    def parser_for(self, source):
+        input_stream = ObjectStream(StringCharacterInput(source))
+        lexer = CLexer(input_stream)
+        return CParser(lexer)
+
     def test_declaration(self):
         import logging
 
         logging.basicConfig(level=logging.DEBUG)
 
-        ts = TokenStream(TokenProvider([
-            Token(Token_INT, 'int'),
-            Token(Token_POINTER, '*'),
-            Token(Token_ID, 'x')
-        ]))
-        parser = CParser(ts)
+        parser = self.parser_for('int *x')
         parser.get_next_token()
         parser.declaration()
 
-        ts = TokenStream(TokenProvider([
-            Token(Token_INT, 'int'),
-            Token(Token_POINTER, '*'),
-            Token(Token_ID, 'x'),
-            Token(Token_LEFT_PARENTHESIS, '('),
-            Token(Token_RIGHT_PARENTHESIS, ')')
-        ]))
-        parser = CParser(ts)
+        parser = self.parser_for('int *x()')
         parser.get_next_token()
         parser.declaration()
 
-        ts = TokenStream(TokenProvider([
-            Token(Token_INT, 'int'),
-            Token(Token_POINTER, '*'),
-            Token(Token_ID, 'x'),
-            Token(Token_LEFT_BRACKET, '['),
-            Token(Token_RIGHT_BRACKET, ']')
-        ]))
-        parser = CParser(ts)
+        parser = self.parser_for('int *x[]')
         parser.get_next_token()
         parser.declaration()
 
-        ts = TokenStream(TokenProvider([
-            Token(Token_INT, 'int'),
-            Token(Token_LEFT_PARENTHESIS, '('),
-            Token(Token_POINTER, '*'),
-            Token(Token_ID, 'x'),
-            Token(Token_RIGHT_PARENTHESIS, ')'),
-            Token(Token_LEFT_PARENTHESIS, '('),
-            Token(Token_RIGHT_PARENTHESIS, ')')
-        ]))
-        parser = CParser(ts)
+        parser = self.parser_for('int (*x)()')
         parser.get_next_token()
         parser.declaration()
 
-        ts = TokenStream(TokenProvider([
-            Token(Token_INT, 'int'),
-            Token(Token_POINTER, '*'),
-            Token(Token_LEFT_PARENTHESIS, '('),
-            Token(Token_POINTER, '*'),
-            Token(Token_ID, 'x'),
-            Token(Token_RIGHT_PARENTHESIS, ')'),
-            Token(Token_LEFT_PARENTHESIS, '('),
-            Token(Token_RIGHT_PARENTHESIS, ')')
-        ]))
-        parser = CParser(ts)
+        parser = self.parser_for('int *(*x)()')
         parser.get_next_token()
         parser.declaration()
 
         # Check: char *(*(**foo[][])())[]
         # Result: foo is an array of an array of a pointer to a pointer to a function returning a pointer to an array of a pointer to char
-        ts = TokenStream(TokenProvider([
-            Token(Token_INT, 'char'),
-            Token(Token_POINTER, '*'),
-            Token(Token_LEFT_PARENTHESIS, '('),
-            Token(Token_POINTER, '*'),
-            Token(Token_LEFT_PARENTHESIS, '('),
-            Token(Token_POINTER, '*'),
-            Token(Token_POINTER, '*'),
-            Token(Token_ID, 'foo'),
-            Token(Token_LEFT_BRACKET, '['),
-            Token(Token_RIGHT_BRACKET, ']'),
-            Token(Token_LEFT_BRACKET, '['),
-            Token(Token_RIGHT_BRACKET, ']'),
-            Token(Token_RIGHT_PARENTHESIS, ')'),
-            Token(Token_LEFT_PARENTHESIS, '('),
-            Token(Token_RIGHT_PARENTHESIS, ')'),
-            Token(Token_RIGHT_PARENTHESIS, ')'),
-            Token(Token_LEFT_BRACKET, '['),
-            Token(Token_RIGHT_BRACKET, ']')
-        ]))
-        parser = CParser(ts)
+        parser = self.parser_for('char *(*(**foo[][])())[]')
         parser.get_next_token()
         parser.declaration()
 
@@ -119,11 +67,6 @@ class TestCParser(TestCase):
 
         logging.basicConfig(level=logging.DEBUG)
 
-        ts = TokenStream(TokenProvider([
-            Token(Token_INT, 'int'),
-            Token(Token_POINTER, '*'),
-            Token(Token_ID, 'x')
-        ]))
-        parser = CParser(ts)
+        parser = self.parser_for('int *x')
         parser.get_next_token()
         parser.declaration()

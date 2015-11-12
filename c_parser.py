@@ -310,32 +310,7 @@ expression ::= assignment_expression
 __author__ = 'Christian Mönch'
 
 
-import sys
-import logging
-
-
-Token_ID = 1
-Token_TYPE = 2
-Token_TYPEDEF = 3
-Token_STATIC = 4
-Token_EXTERNAL = 5
-Token_CONST = 6
-Token_SEMI = 7
-Token_COMMENT = 8
-Token_CHAR = 9
-Token_INT = 10
-Token_LONG = 11
-Token_UNSIGNED = 12
-Token_LINE = 13
-Token_PRAGMA = 14
-Token_COMMA = 15
-Token_SHORT = 16
-Token_SIGNED = 17
-Token_LEFT_PARENTHESIS = 18
-Token_RIGHT_PARENTHESIS = 19
-Token_POINTER = 20
-Token_LEFT_BRACKET = 21
-Token_RIGHT_BRACKET = 22
+from c_lexer import *
 
 
 class CParserError(object):
@@ -349,8 +324,8 @@ class CParser(object):
         self.error = None
         self.name = ''
         self.first_token = {
-            'preprocessor_directive': [Token_LINE, Token_PRAGMA],
-            'declaration': ['type'],
+            'preprocessor_directive': [Token_PREPROCESSOR_DIRECTIVE],
+            'declaration': [Token_INT, Token_LONG, Token_CHAR, Token_SHORT],
         }
 
     def show_message(self, message):
@@ -404,7 +379,7 @@ class CParser(object):
         elif self.token_equals(Token_COMMENT):
             self.get_next_token()
             return None
-        elif self.token_equals(Token_SEMI):
+        elif self.token_equals(Token_SEMICOLON):
             self.get_next_token()
             return None
         else:
@@ -445,7 +420,7 @@ class CParser(object):
         return result
 
     def pointer_specifier(self):
-        if self.token_equals(Token_POINTER):
+        if self.token_equals(Token_TIMES):
             self.get_next_token()
             result = self.pointer_specifier() + 'a pointer to '
         else:
