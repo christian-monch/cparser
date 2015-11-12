@@ -180,8 +180,49 @@ continuation line"
                                  (r'"a\t"', "a\t"),
                                  (r'"a\v"', "a\v"),
                                  (r'"a\f"', "a\f"),
+                                 (r'"a\x2f"', "a\x2f"),
                                  (r'"a\2"', "a\x02"),
                                  (r'"a\23"', "a\x13"),
                                  (r'"a\234"', "a\x9c")):
             token = self.process_string_constant(sequence)
             self.assertEqual(token.value, result)
+
+    def process_character_constant(self, constant):
+        input_stream = ObjectStream(StringCharacterInput(constant))
+        lexer = CLexer(input_stream)
+        return lexer.read_character_constant()
+
+    def test_character_constant_reading(self):
+        constant = "'a'"
+        token = self.process_character_constant(constant)
+        self.assertEqual('a', token.value)
+
+        constant = "'a"
+        self.assertRaises(Exception, self.process_character_constant, (constant,))
+
+        constant = "'\\"
+        self.assertRaises(Exception, self.process_character_constant, (constant,))
+
+        constant = "'\\'"
+        self.assertRaises(Exception, self.process_character_constant, (constant,))
+
+        for sequence, result in ((r"'\"'", '"'),
+                                 (r"'\''", "'"),
+                                 (r"'\n'", "\n"),
+                                 (r"'\t'", "\t"),
+                                 (r"'\v'", "\v"),
+                                 (r"'\f'", "\f"),
+                                 (r"'\x2f'", "\x2f"),
+                                 (r"'\2'", "\x02"),
+                                 (r"'\23'", "\x13"),
+                                 (r"'\234'", "\x9c")):
+            token = self.process_character_constant(sequence)
+            self.assertEqual(token.value, result)
+
+    def test_two_character_operators(self):
+        input_stream = ObjectStream(StringCharacterInput('+++'))
+        lexer = CLexer(input_stream)
+        token = lexer.get_next_token()
+        self.assertEqual(token.value, '++')
+        token = lexer.get_next_token()
+        self.assertEqual(token.value, '+')

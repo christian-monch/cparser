@@ -193,9 +193,13 @@ class CLexer(object):
         while self.current_value() in string.whitespace and self.current_value() != '\n':
             self.get_next_character()
 
-    def create_token(self, token_type):
+    def create_token(self, token_type, start_coordinate=None, end_coordinate=None):
+        if start_coordinate is None:
+            start_coordinate = self.current_token_elements[0].coordinate
+        if end_coordinate is None:
+            end_coordinate = self.current_token_elements[-1].coordinate
         return Token(token_type, ''.join([x.value for x in self.current_token_elements]), Span(
-            self.current_token_elements[0].coordinate, self.current_token_elements[-1].coordinate))
+            start_coordinate, end_coordinate))
 
     def get_next_token(self):
         # Eat whitespace
@@ -351,6 +355,7 @@ class CLexer(object):
 
     def read_string_constant(self):
         self.current_token_elements = []
+        start_coordinate = self.current_character.coordinate
         while self.get_next_value() != '"':
             if self.current_value() in ('\n', EndMarker):
                 raise Exception('string terminated by new line or end of file')
@@ -358,11 +363,12 @@ class CLexer(object):
                 self.read_escape_sequence()
             else:
                 self.current_token_elements.append(self.current_character)
+        end_coordinate = self.current_character.coordinate
         self.get_next_character()
-        return self.create_token(Token.Type_String)
+        return self.create_token(Token.Type_String, start_coordinate, end_coordinate)
 
     def read_character_constant(self):
-        # skip the start tick
+        start_coordinate = self.current_character.coordinate
         self.get_next_character()
         self.current_token_elements = []
         if self.current_value() == '\\':
@@ -373,8 +379,9 @@ class CLexer(object):
         if self.current_value() != '\'':
             raise Exception('unterminated string constant:')
         # skip the end tick
+        end_coordinate = self.current_character.coordinate
         self.get_next_character()
-        return self.create_token(Token.Type_Character)
+        return self.create_token(Token.Type_Character, start_coordinate, end_coordinate)
 
 
 if __name__ == '__main__':
