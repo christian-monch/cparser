@@ -19,6 +19,8 @@ class TestCParser(TestCase):
         return CParser(lexer)
 
     def test_declaration_list(self):
+        # TODO: compare results from parser output directly in order to isolate
+        # fault detection.
         logging.basicConfig(level=logging.DEBUG)
         for source_code in ('int x[]',
                             'int x[][]',
@@ -30,14 +32,14 @@ class TestCParser(TestCase):
                             'char **foo[][]',
                             'char (**foo[][])()',
                             'char *(**foo[][])()',
-                            'char (*(**foo[][])())[]'):
+                            # Result: foo is an array of an array of a pointer to a pointer to a function returning a pointer to an array of a pointer to char
+                            'char (*(**foo[][])())[]',
+                            'int *f(int a, char **b)'):
             parser = self.parser_for(source_code)
             parser.get_next_token()
             a = parser.declaration_list()
             generator = c_generator.CGenerator()
-            self.assertEqual(generator.show_declarator_list(a[0], a[1]), source_code)
-
-        # Result: foo is an array of an array of a pointer to a pointer to a function returning a pointer to an array of a pointer to char
+            self.assertEqual(generator.show_declaration_list(a[0], a[1]), source_code)
 
     def test_parameter_list(self):
         logging.basicConfig(level=logging.DEBUG)

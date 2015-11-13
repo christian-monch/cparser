@@ -464,9 +464,8 @@ class CParser(object):
     def variable_specifier(self):
         result = self.name_specifier()
         if self.token_equals(Token_LEFT_PARENTHESIS):
-            self.match_token(Token_LEFT_PARENTHESIS)
-            result.append(ast.Function(None, None, None, None))
-            self.match_token(Token_RIGHT_PARENTHESIS)
+            parameter = self.parameter_list()
+            result.append(ast.Function(None, parameter, None, None))
         if self.token_equals(Token_LEFT_BRACKET):
             while self.token_equals(Token_LEFT_BRACKET):
                 self.match_token(Token_LEFT_BRACKET)
@@ -493,7 +492,7 @@ class CParser(object):
         result = []
         self.match_token(Token_LEFT_PARENTHESIS)
         if self.token_equals(Token_RIGHT_PARENTHESIS):
-            self.match_token(Token_LEFT_PARENTHESIS)
+            self.match_token(Token_RIGHT_PARENTHESIS)
             return result
         result.append(self.declaration())
         while self.token_equals(Token_COMMA):

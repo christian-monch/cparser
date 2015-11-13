@@ -24,7 +24,7 @@ class CGenerator(object):
         if current_type is None:
             return type_string
         if isinstance(current_type, ast.Function):
-            return self.show_type(type_string + '()', current_type.return_type)
+            return self.show_type(type_string + '(' + self.show_parameter(current_type.parameter) + ')', current_type.return_type)
         elif isinstance(current_type, ast.ArrayDeclaration):
             return self.show_type(type_string + '[]', current_type.modified_type)
         elif isinstance(current_type, ast.Pointer):
@@ -34,10 +34,17 @@ class CGenerator(object):
         else:
             raise Exception('unexpected type node: %s' % str(current_type))
 
-    def show_declarator_list(self, basic_type, identifier_modifier_list):
+    def show_declaration_list(self, basic_type, identifier_modifier_list):
         result = ''
         for identifier, modifier in identifier_modifier_list:
             if result != '':
                 result += ', '
             result += self.show_type(identifier.name if identifier.name is not None else '', modifier)
         return basic_type.type_name + ' ' + result
+
+    def show_declaration(self, basic_type, identifier, modifier):
+        return basic_type.type_name + ' ' + self.show_type(identifier.name if identifier.name is not None else '', modifier)
+
+    def show_parameter(self, parameter_list):
+        result = ''
+        return ', '.join([self.show_declaration(p[0], p[1], p[2]) for p in parameter_list])
