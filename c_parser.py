@@ -310,7 +310,9 @@ expression ::= assignment_expression
 __author__ = 'Christian Mönch'
 
 
+import sys
 from c_lexer import *
+import ast
 
 
 class CParserError(object):
@@ -391,19 +393,50 @@ class CParser(object):
     def function_definition(self):
         pass
 
+    def create_modifier(self, list):
+        pass
+
+    def build_declaration_ast(self, modifier_spec):
+        """
+        Converts a list into an AST
+        """
+        if not modifier_spec:
+            return None
+        if len(modifier_spec) == 1:
+            return modifier_spec[0]
+        for index, modifier in enumerate(modifier_spec[:-1]):
+            if isinstance(modifier, ast.Pointer):
+                modifier.set_modified_type(modifier_spec[index + 1])
+            elif isinstance(modifier, ast.ArrayDeclaration):
+                modifier.set_modified_type(modifier_spec[index + 1])
+            elif isinstance(modifier, ast.Function):
+                modifier.set_return_type(modifier_spec[index + 1])
+            else:
+                raise Exception('unknown modifier %s' % repr(modifier))
+        return modifier_spec[0]
+
     def declaration(self):
         """
-        declaration := type_specifier variable_specifier { ',' variable_specifier }
+        declaration := type_specifier pointer_specifier
         """
         type_spec = self.type_specifier()
+        modifier_spec = self.pointer_specifier()
+        return type_spec, modifier_spec[0], self.build_declaration_ast(modifier_spec[1:])
+
+    def declaration_list(self):
+        """
+        declaration_list := type_specifier pointer_specifier { ',' pointer_specifier }
+        """
+        type_spec = self.type_specifier()
+        variable_spec_list = []
         while True:
-            variable_spec = self.pointer_specifier()
-            print variable_spec + type_spec
+            modifier_spec = self.pointer_specifier()
+            variable_spec_list.append((modifier_spec[0], self.build_declaration_ast(modifier_spec[1:])))
             if self.token_equals(Token_COMMA):
                 self.get_next_token()
                 continue
             break
-        self.match_token(None)
+        return type_spec, variable_spec_list
 
     def type_specifier(self):
         """
@@ -417,12 +450,13 @@ class CParser(object):
                 Token_CHAR, Token_SHORT, Token_INT, Token_LONG):
             result += self.current_token.value
             self.get_next_token()
-        return result
+        return ast.BasicType(result, None)
 
     def pointer_specifier(self):
         if self.token_equals(Token_TIMES):
             self.get_next_token()
-            result = self.pointer_specifier() + 'a pointer to '
+            result = self.pointer_specifier()
+            result.append(ast.Pointer(None, None))
         else:
             result = self.variable_specifier()
         return result
@@ -431,15 +465,13 @@ class CParser(object):
         result = self.name_specifier()
         if self.token_equals(Token_LEFT_PARENTHESIS):
             self.match_token(Token_LEFT_PARENTHESIS)
-            result += 'a function returning '
+            result.append(ast.Function(None, None, None, None))
             self.match_token(Token_RIGHT_PARENTHESIS)
         if self.token_equals(Token_LEFT_BRACKET):
-            suffix = ''
             while self.token_equals(Token_LEFT_BRACKET):
                 self.match_token(Token_LEFT_BRACKET)
-                suffix += 'an array of '
+                result.append(ast.ArrayDeclaration(None, None, None))
                 self.match_token(Token_RIGHT_BRACKET)
-            result += suffix
         return result
 
     def name_specifier(self):
@@ -448,10 +480,26 @@ class CParser(object):
             result = self.pointer_specifier()
             self.match_token(Token_RIGHT_PARENTHESIS)
         elif self.token_equals(Token_ID):
-            result = self.current_token.value + ' is '
+            result = [ast.Identifier(self.current_token.value)]
             self.get_next_token()
         else:
-            result = '<anonymous> is a '
+            result = [ast.Identifier(None)]
+        return result
+
+    def parameter_list(self):
+        """
+        parameter_list = '(' [ declaration { ',' declaration } ] ')'
+        """
+        result = []
+        self.match_token(Token_LEFT_PARENTHESIS)
+        if self.token_equals(Token_RIGHT_PARENTHESIS):
+            self.match_token(Token_LEFT_PARENTHESIS)
+            return result
+        result.append(self.declaration())
+        while self.token_equals(Token_COMMA):
+            self.get_next_token()
+            result.append(self.declaration())
+        self.match_token(Token_RIGHT_PARENTHESIS)
         return result
 
     def preprocessor_directive(self):

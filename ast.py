@@ -7,35 +7,41 @@ class AST(object):
         self.span = span
 
 
-class Pointer(AST):
-    def __init__(self, referred_type, qualifier, span=None):
+# Objects of this class modify other types
+class BaseTypeModifier(AST):
+    def __init__(self, span):
+        super(BaseTypeModifier, self).__init__(span)
+        self.modified_type = None
+
+    def set_modified_type(self, modified_type):
+        self.modified_type = modified_type
+
+
+class Pointer(BaseTypeModifier):
+    def __init__(self, modified_type, qualifier, span=None):
         super(Pointer, self).__init__(span)
-        self.referred_type = referred_type
         self.qualifier = qualifier
+        self.set_modified_type(modified_type)
 
 
-class FunctionDeclaration(AST):
-    def __init__(self, return_type, parameter, qualifier, span=None):
-        super(FunctionDeclaration, self).__init__(span)
+class Function(AST):
+    def __init__(self, return_type, parameter, body, qualifier, span=None):
+        super(Function, self).__init__(span)
         self.return_type = return_type
         self.parameter = parameter
-        self.qualifier = qualifier
-
-
-class FunctionDefinition(AST):
-    def __init__(self, return_type, parameter, qualifier, body, span=None):
-        super(FunctionDefinition, self).__init__(span)
-        self.return_type = return_type
-        self.parameter = parameter
-        self.qualifier = qualifier
         self.body = body
-
-
-class ArrayDeclaration(AST):
-    def __init__(self, referred_type, qualifier, span=None):
-        super(ArrayDeclaration, self).__init__(span)
-        self.referred_type = referred_type
         self.qualifier = qualifier
+
+    def set_return_type(self, return_type):
+        self.return_type = return_type
+
+
+class ArrayDeclaration(BaseTypeModifier):
+    def __init__(self, modified_type, size, qualifier, span=None):
+        super(ArrayDeclaration, self).__init__(span)
+        self.size = size
+        self.qualifier = qualifier
+        self.set_modified_type(modified_type)
 
 
 class BasicType(AST):
@@ -49,3 +55,25 @@ class Identifier(AST):
     def __init__(self, name, span=None):
         super(Identifier, self).__init__(span)
         self.name = name
+
+
+class TypeModifier(AST):
+    def __init__(self, modifier, identifier, span=None):
+        super(TypeModifier, self).__init__(span)
+        self.modifier = modifier
+        self.identifier = identifier
+
+
+class Declaration(AST):
+    def __init__(self, basic_type, modifier, span=None):
+        super(Declaration, self).__init__(span)
+        self.basic_type = basic_type
+        self.modifier = modifier
+        self.identifier = modifier.identifier
+
+
+class DeclarationList(AST):
+    def __init__(self, basic_type, modifier_list, span=None):
+        super(DeclarationList, self).__init__(span)
+        self.basic_type = basic_type
+        self.modifier_list = modifier_list
