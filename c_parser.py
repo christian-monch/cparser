@@ -326,8 +326,8 @@ class CParser(object):
         self.error = None
         self.name = ''
         self.first_token = {
-            'preprocessor_directive': [Token_PREPROCESSOR_DIRECTIVE],
-            'declaration': [Token_INT, Token_LONG, Token_CHAR, Token_SHORT],
+            'preprocessor_directive': [TokenEnum.PREPROCESSOR_DIRECTIVE],
+            'declaration': [TokenEnum.INT, TokenEnum.LONG, TokenEnum.CHAR, TokenEnum.SHORT],
         }
 
     def show_message(self, message):
@@ -378,10 +378,10 @@ class CParser(object):
     def external_declaration(self):
         if self.current_token in self.first_token['preprocessor_directive']:
             return self.preprocessor_directive()
-        elif self.token_equals(Token_COMMENT):
+        elif self.token_equals(TokenEnum.COMMENT):
             self.get_next_token()
             return None
-        elif self.token_equals(Token_SEMICOLON):
+        elif self.token_equals(TokenEnum.SEMICOLON):
             self.get_next_token()
             return None
         else:
@@ -432,7 +432,7 @@ class CParser(object):
         while True:
             modifier_spec = self.pointer_specifier()
             variable_spec_list.append((modifier_spec[0], self.build_declaration_ast(modifier_spec[1:])))
-            if self.token_equals(Token_COMMA):
+            if self.token_equals(TokenEnum.COMMA):
                 self.get_next_token()
                 continue
             break
@@ -444,16 +444,16 @@ class CParser(object):
         """
         result = ''
         while self.current_token.type in (
-                Token_EXTERNAL, Token_STATIC,
-                Token_CONST,
-                Token_SIGNED, Token_UNSIGNED,
-                Token_CHAR, Token_SHORT, Token_INT, Token_LONG):
+                TokenEnum.EXTERNAL, TokenEnum.STATIC,
+                TokenEnum.CONST,
+                TokenEnum.SIGNED, TokenEnum.UNSIGNED,
+                TokenEnum.CHAR, TokenEnum.SHORT, TokenEnum.INT, TokenEnum.LONG):
             result += self.current_token.value
             self.get_next_token()
         return ast.BasicType(result, None)
 
     def pointer_specifier(self):
-        if self.token_equals(Token_TIMES):
+        if self.token_equals(TokenEnum.TIMES):
             self.get_next_token()
             result = self.pointer_specifier()
             result.append(ast.Pointer(None, None))
@@ -463,22 +463,22 @@ class CParser(object):
 
     def variable_specifier(self):
         result = self.name_specifier()
-        if self.token_equals(Token_LEFT_PARENTHESIS):
+        if self.token_equals(TokenEnum.LEFT_PARENTHESIS):
             parameter = self.parameter_list()
             result.append(ast.Function(None, parameter, None, None))
-        if self.token_equals(Token_LEFT_BRACKET):
-            while self.token_equals(Token_LEFT_BRACKET):
-                self.match_token(Token_LEFT_BRACKET)
+        if self.token_equals(TokenEnum.LEFT_BRACKET):
+            while self.token_equals(TokenEnum.LEFT_BRACKET):
+                self.match_token(TokenEnum.LEFT_BRACKET)
                 result.append(ast.ArrayDeclaration(None, None, None))
-                self.match_token(Token_RIGHT_BRACKET)
+                self.match_token(TokenEnum.RIGHT_BRACKET)
         return result
 
     def name_specifier(self):
-        if self.token_equals(Token_LEFT_PARENTHESIS):
+        if self.token_equals(TokenEnum.LEFT_PARENTHESIS):
             self.get_next_token()
             result = self.pointer_specifier()
-            self.match_token(Token_RIGHT_PARENTHESIS)
-        elif self.token_equals(Token_ID):
+            self.match_token(TokenEnum.RIGHT_PARENTHESIS)
+        elif self.token_equals(TokenEnum.ID):
             result = [ast.Identifier(self.current_token.value)]
             self.get_next_token()
         else:
@@ -490,15 +490,15 @@ class CParser(object):
         parameter_list = '(' [ declaration { ',' declaration } ] ')'
         """
         result = []
-        self.match_token(Token_LEFT_PARENTHESIS)
-        if self.token_equals(Token_RIGHT_PARENTHESIS):
-            self.match_token(Token_RIGHT_PARENTHESIS)
+        self.match_token(TokenEnum.LEFT_PARENTHESIS)
+        if self.token_equals(TokenEnum.RIGHT_PARENTHESIS):
+            self.match_token(TokenEnum.RIGHT_PARENTHESIS)
             return result
         result.append(self.declaration())
-        while self.token_equals(Token_COMMA):
+        while self.token_equals(TokenEnum.COMMA):
             self.get_next_token()
             result.append(self.declaration())
-        self.match_token(Token_RIGHT_PARENTHESIS)
+        self.match_token(TokenEnum.RIGHT_PARENTHESIS)
         return result
 
     def preprocessor_directive(self):

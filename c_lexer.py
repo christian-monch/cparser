@@ -2,10 +2,11 @@
 """
 A simple lexer for C
 """
-__author__ = 'Christian Mönch'
-
-
 import string
+from enum import Enum
+
+
+__author__ = 'Christian Mönch'
 
 
 EndMarker = '$end'
@@ -13,78 +14,80 @@ WordStarter = string.ascii_letters + '_'
 WordContinuation = string.ascii_letters + string.digits + '_'
 
 
-Token_NONE = 'None'
-Token_DIVIDE_ASSIGN = 'Divide_Assign'
-Token_PLUS_ASSIGN = 'Plus_Assign'
-Token_MINUS_ASSIGN = 'Minus_Assign'
-Token_TIMES_ASSIGN = 'Times_Assign'
-Token_MODULE_ASSIGN = 'Module_Assign'
-Token_EQUAL = 'Equal'
-Token_DECREMENT = 'Decrement'
-Token_INCREMENT = 'Increment'
-Token_LOGIC_OR = 'Logic_Or'
-Token_LOGIC_AND = 'Logic_And'
-Token_GREATER_EQUAL = 'Greater_Equal'
-Token_LESS_EQUAL = 'Less_Equal'
-Token_STRUCTURE_DEREFERENCE = 'Structure_Dereference'
-Token_TIMES = 'Times'
-Token_PLUS = 'Plus'
-Token_MINUS = 'Minus'
-Token_DEVIDE = 'Devide'
-Token_MODULE = 'Module'
-Token_ASSIGN = 'Assign'
-Token_LEFT_BRACKET = 'Left_Bracket'
-Token_RIGHT_BRACKET = 'Right_Bracket'
-Token_LEFT_PARENTHESIS = 'Left_Parenthesis'
-Token_RIGHT_PARENTHESIS = 'Right_Parenthesis'
-Token_LEFT_BRACE = 'Left_Brace'
-Token_RIGHT_BRACE = 'Right_Brace'
-Token_OR = 'Or'
-Token_AND = 'And'
-Token_EXOR = 'Exor'
-Token_INVERT = 'Invert'
-Token_NOT = 'Not'
-Token_SEMICOLON = 'Semicolon'
-Token_COLON = 'Colon'
-Token_COMMA = 'Comma'
-Token_DOT = 'Dot'
-Token_LESS = 'Less'
-Token_GREATER = 'Greater'
-Token_QUESTION_MARK = 'Question_Mark'
-Token_BOOL = 'Bool'
-Token_CHAR = 'Char'
-Token_CONST = 'Const'
-Token_INT = 'Int'
-Token_LONG = 'Long'
-Token_FLOAT = 'Float'
-Token_DOUBLE = 'Double'
-Token_SIGNED = 'Signed'
-Token_UNSIGNED = 'Unsigned'
-Token_RESTRICTED = 'Restricted'
-Token_IF = 'If'
-Token_WHILE = 'While'
-Token_DO = 'Do'
-Token_SWITCH = 'Switch'
-Token_BREAK = 'Break'
-Token_GOTO = 'Goto'
-Token_VOID = 'Void'
-Token_TYPEDEF = 'Typedef'
-Token_STRUCT = 'Struct'
-Token_UNION = 'Union'
-Token_VOLATILE = 'Volatile'
-Token_REGISTER = 'Register'
-Token_RETURN = 'Return'
-Token_DEFAULT = 'Default'
-Token_SHORT = 'Short'
-Token_CASE = 'Case'
-Token_INTEGER_CONSTANT = 'Integer_Constant'
-Token_CHARACTER_CONSTANT = 'Character_Constant'
-Token_STRING_CONSTANT = 'String_Constant'
-Token_ID = 'Id'
-Token_COMMENT = 'Comment'
-Token_PREPROCESSOR_DIRECTIVE = 'Preprocessor_Directive'
-Token_EXTERNAL = 'Extternal'
-Token_STATIC = 'Static'
+class TokenEnum(Enum):
+    UNKNOWN = 'None'
+    DIVIDE_ASSIGN = 'Divide_Assign'
+    PLUS_ASSIGN = 'Plus_Assign'
+    MINUS_ASSIGN = 'Minus_Assign'
+    TIMES_ASSIGN = 'Times_Assign'
+    MODULE_ASSIGN = 'Module_Assign'
+    EQUAL = 'Equal'
+    DECREMENT = 'Decrement'
+    INCREMENT = 'Increment'
+    LOGIC_OR = 'Logic_Or'
+    LOGIC_AND = 'Logic_And'
+    GREATER_EQUAL = 'Greater_Equal'
+    LESS_EQUAL = 'Less_Equal'
+    STRUCTURE_DEREFERENCE = 'Structure_Dereference'
+    TIMES = 'Times'
+    PLUS = 'Plus'
+    MINUS = 'Minus'
+    DEVIDE = 'Devide'
+    MODULE = 'Module'
+    ASSIGN = 'Assign'
+    LEFT_BRACKET = 'Left_Bracket'
+    RIGHT_BRACKET = 'Right_Bracket'
+    LEFT_PARENTHESIS = 'Left_Parenthesis'
+    RIGHT_PARENTHESIS = 'Right_Parenthesis'
+    LEFT_BRACE = 'Left_Brace'
+    RIGHT_BRACE = 'Right_Brace'
+    OR = 'Or'
+    AND = 'And'
+    EXOR = 'Exor'
+    INVERT = 'Invert'
+    NOT = 'Not'
+    SEMICOLON = 'Semicolon'
+    COLON = 'Colon'
+    COMMA = 'Comma'
+    DOT = 'Dot'
+    LESS = 'Less'
+    GREATER = 'Greater'
+    QUESTION_MARK = 'Question_Mark'
+    BOOL = 'Bool'
+    CHAR = 'Char'
+    CONST = 'Const'
+    INT = 'Int'
+    LONG = 'Long'
+    FLOAT = 'Float'
+    DOUBLE = 'Double'
+    SIGNED = 'Signed'
+    UNSIGNED = 'Unsigned'
+    RESTRICTED = 'Restricted'
+    IF = 'If'
+    WHILE = 'While'
+    DO = 'Do'
+    SWITCH = 'Switch'
+    BREAK = 'Break'
+    GOTO = 'Goto'
+    VOID = 'Void'
+    TYPEDEF = 'Typedef'
+    STRUCT = 'Struct'
+    UNION = 'Union'
+    VOLATILE = 'Volatile'
+    REGISTER = 'Register'
+    RETURN = 'Return'
+    DEFAULT = 'Default'
+    SHORT = 'Short'
+    CASE = 'Case'
+    INTEGER_CONSTANT = 'Integer_Constant'
+    CHARACTER_CONSTANT = 'Character_Constant'
+    STRING_CONSTANT = 'String_Constant'
+    ID = 'Id'
+    PREPROCESSOR_DIRECTIVE = 'Preprocessor_Directive'
+    EXTERNAL = 'External'
+    STATIC = 'Static'
+    COMMENT = 'Comment'
+    WHITESPACE = 'Whitespace'
 
 
 class Span(object):
@@ -114,46 +117,46 @@ class CLexer(object):
     state_line_comment = 'line_comment'
 
     DoubleToken = {
-        '/=': Token_DIVIDE_ASSIGN,
-        '+=': Token_PLUS_ASSIGN,
-        '-=': Token_MINUS_ASSIGN,
-        '*=': Token_TIMES_ASSIGN,
-        '%=': Token_MODULE_ASSIGN,
-        '==': Token_EQUAL,
-        '--': Token_DECREMENT,
-        '++': Token_INCREMENT,
-        '||': Token_LOGIC_OR,
-        '&&': Token_LOGIC_AND,
-        '>=': Token_GREATER_EQUAL,
-        '<=': Token_LESS_EQUAL,
-        '->': Token_STRUCTURE_DEREFERENCE
+        '/=': TokenEnum.DIVIDE_ASSIGN,
+        '+=': TokenEnum.PLUS_ASSIGN,
+        '-=': TokenEnum.MINUS_ASSIGN,
+        '*=': TokenEnum.TIMES_ASSIGN,
+        '%=': TokenEnum.MODULE_ASSIGN,
+        '==': TokenEnum.EQUAL,
+        '--': TokenEnum.DECREMENT,
+        '++': TokenEnum.INCREMENT,
+        '||': TokenEnum.LOGIC_OR,
+        '&&': TokenEnum.LOGIC_AND,
+        '>=': TokenEnum.GREATER_EQUAL,
+        '<=': TokenEnum.LESS_EQUAL,
+        '->': TokenEnum.STRUCTURE_DEREFERENCE
     }
 
     SingleToken = {
-        '*': Token_TIMES,
-        '+': Token_PLUS,
-        '-': Token_MINUS,
-        '/': Token_DEVIDE,
-        '%': Token_MODULE,
-        '=': Token_ASSIGN,
-        '[': Token_LEFT_BRACKET,
-        ']': Token_RIGHT_BRACKET,
-        '(': Token_LEFT_PARENTHESIS,
-        ')': Token_RIGHT_PARENTHESIS,
-        '{': Token_LEFT_BRACE,
-        '}': Token_RIGHT_BRACE,
-        '|': Token_OR,
-        '&': Token_AND,
-        '^': Token_EXOR,
-        '~': Token_INVERT,
-        '!': Token_NOT,
-        ';': Token_SEMICOLON,
-        ':': Token_COLON,
-        ',': Token_COMMA,
-        '.': Token_DOT,
-        '<': Token_LESS,
-        '>': Token_GREATER,
-        '?': Token_QUESTION_MARK
+        '*': TokenEnum.TIMES,
+        '+': TokenEnum.PLUS,
+        '-': TokenEnum.MINUS,
+        '/': TokenEnum.DEVIDE,
+        '%': TokenEnum.MODULE,
+        '=': TokenEnum.ASSIGN,
+        '[': TokenEnum.LEFT_BRACKET,
+        ']': TokenEnum.RIGHT_BRACKET,
+        '(': TokenEnum.LEFT_PARENTHESIS,
+        ')': TokenEnum.RIGHT_PARENTHESIS,
+        '{': TokenEnum.LEFT_BRACE,
+        '}': TokenEnum.RIGHT_BRACE,
+        '|': TokenEnum.OR,
+        '&': TokenEnum.AND,
+        '^': TokenEnum.EXOR,
+        '~': TokenEnum.INVERT,
+        '!': TokenEnum.NOT,
+        ';': TokenEnum.SEMICOLON,
+        ':': TokenEnum.COLON,
+        ',': TokenEnum.COMMA,
+        '.': TokenEnum.DOT,
+        '<': TokenEnum.LESS,
+        '>': TokenEnum.GREATER,
+        '?': TokenEnum.QUESTION_MARK
     }
 
     # "\v\f\n\t\r" == '\x0b\x0c\x0a\x09\x0d'
@@ -169,34 +172,34 @@ class CLexer(object):
     }
 
     KeyWordTypes = {
-        'bool': Token_BOOL,
-        'char': Token_CHAR,
-        'const': Token_CONST,
-        'int': Token_INT,
-        'long': Token_LONG,
-        'float': Token_FLOAT,
-        'double': Token_DOUBLE,
-        'signed': Token_SIGNED,
-        'unsigned': Token_UNSIGNED,
-        'restricted': Token_RESTRICTED,
-        'if': Token_IF,
-        'while': Token_WHILE,
-        'do': Token_DO,
-        'switch': Token_SWITCH,
-        'break': Token_BREAK,
-        'goto': Token_GOTO,
-        'void': Token_VOID,
-        'typedef': Token_TYPEDEF,
-        'struct': Token_STRUCT,
-        'union': Token_UNION,
-        'volatile': Token_VOLATILE,
-        'register': Token_REGISTER,
-        'return': Token_RETURN,
-        'default': Token_DEFAULT,
-        'short': Token_SHORT,
-        'case': Token_CASE,
-        'external': Token_EXTERNAL,
-        'static': Token_STATIC
+        'bool': TokenEnum.BOOL,
+        'char': TokenEnum.CHAR,
+        'const': TokenEnum.CONST,
+        'int': TokenEnum.INT,
+        'long': TokenEnum.LONG,
+        'float': TokenEnum.FLOAT,
+        'double': TokenEnum.DOUBLE,
+        'signed': TokenEnum.SIGNED,
+        'unsigned': TokenEnum.UNSIGNED,
+        'restricted': TokenEnum.RESTRICTED,
+        'if': TokenEnum.IF,
+        'while': TokenEnum.WHILE,
+        'do': TokenEnum.DO,
+        'switch': TokenEnum.SWITCH,
+        'break': TokenEnum.BREAK,
+        'goto': TokenEnum.GOTO,
+        'void': TokenEnum.VOID,
+        'typedef': TokenEnum.TYPEDEF,
+        'struct': TokenEnum.STRUCT,
+        'union': TokenEnum.UNION,
+        'volatile': TokenEnum.VOLATILE,
+        'register': TokenEnum.REGISTER,
+        'return': TokenEnum.RETURN,
+        'default': TokenEnum.DEFAULT,
+        'short': TokenEnum.SHORT,
+        'case': TokenEnum.CASE,
+        'external': TokenEnum.EXTERNAL,
+        'static': TokenEnum.STATIC
     }
 
     def __init__(self, character_stream):
@@ -243,12 +246,22 @@ class CLexer(object):
             return character.value
 
     def skip_whitespace(self):
-        while self.current_value() in string.whitespace:
-            self.get_next_character()
+        if self.current_value() in string.whitespace:
+            self.current_token_elements = []
+            while self.current_value() in string.whitespace:
+                self.current_token_elements.append(self.current_character)
+                self.get_next_character()
+            return self.create_token(TokenEnum.WHITESPACE)
+        return None
 
     def skip_inline_whitespace(self):
-        while self.current_value() in string.whitespace and self.current_value() != '\n':
-            self.get_next_character()
+        if self.current_value() in string.whitespace and self.current_value() != '\n':
+            self.current_token_elements = []
+            while self.current_value() in string.whitespace and self.current_value() != '\n':
+                self.current_token_elements.append(self.current_character)
+                self.get_next_character()
+            return self.create_token(TokenEnum.WHITESPACE)
+        return None
 
     def create_token(self, token_type, start_coordinate=None, end_coordinate=None):
         if start_coordinate is None:
@@ -260,7 +273,9 @@ class CLexer(object):
 
     def get_next_token(self):
         # Eat whitespace
-        self.skip_whitespace()
+        token = self.skip_whitespace()
+        if token:
+            return token
 
         # Check preprocessor commands
         if self.current_value() == '#' and self.current_character.coordinate.column == 1:
@@ -277,14 +292,14 @@ class CLexer(object):
             while self.get_next_value() in WordContinuation:
                 self.current_token_elements.append(self.current_character)
             word = ''.join(x.value for x in self.current_token_elements)
-            return self.create_token(self.KeyWordTypes.get(word, Token_ID))
+            return self.create_token(self.KeyWordTypes.get(word, TokenEnum.ID))
 
         # Check numbers
         if self.current_value() in string.digits:
             self.current_token_elements = [self.current_character]
             while self.get_next_value() in string.digits:
                 self.current_token_elements.append(self.current_character)
-            return self.create_token(Token_INTEGER_CONSTANT)
+            return self.create_token(TokenEnum.INTEGER_CONSTANT)
 
         # Check strings
         if self.current_value() == '"':
@@ -313,7 +328,7 @@ class CLexer(object):
         # Unknown token
         self.current_token_elements = [self.current_character]
         self.get_next_character()
-        return self.create_token(Token_NONE)
+        return self.create_token(TokenEnum.UNKNOWN)
 
     def read_word(self):
         """
@@ -335,7 +350,7 @@ class CLexer(object):
         while self.current_value() != '\n' and self.current_value() != EndMarker:
             self.current_token_elements.append(self.current_character)
             self.get_next_character()
-        return self.create_token(Token_PREPROCESSOR_DIRECTIVE)
+        return self.create_token(TokenEnum.PREPROCESSOR_DIRECTIVE)
 
     def read_block_comment(self):
         self.ignore_continuation = True
@@ -350,7 +365,7 @@ class CLexer(object):
         self.current_token_elements.append(self.get_next_character())
         self.get_next_character()
         self.ignore_continuation = False
-        return self.create_token(Token_COMMENT)
+        return self.create_token(TokenEnum.COMMENT)
 
     def read_line_comment(self):
         self.ignore_continuation = True
@@ -362,7 +377,7 @@ class CLexer(object):
                 raise Exception('end of file in line comment')
             self.current_token_elements.append(self.current_character)
         self.ignore_continuation = False
-        return self.create_token(Token_COMMENT)
+        return self.create_token(TokenEnum.COMMENT)
 
     def read_escaped_character(self, next_value):
         escape_sequence = '\\' + next_value
@@ -422,7 +437,7 @@ class CLexer(object):
                 self.current_token_elements.append(self.current_character)
         end_coordinate = self.current_character.coordinate
         self.get_next_character()
-        return self.create_token(Token_STRING_CONSTANT, start_coordinate, end_coordinate)
+        return self.create_token(TokenEnum.STRING_CONSTANT, start_coordinate, end_coordinate)
 
     def read_character_constant(self):
         start_coordinate = self.current_character.coordinate
@@ -438,7 +453,7 @@ class CLexer(object):
         # skip the end tick
         end_coordinate = self.current_character.coordinate
         self.get_next_character()
-        return self.create_token(Token_CHARACTER_CONSTANT, start_coordinate, end_coordinate)
+        return self.create_token(TokenEnum.CHARACTER_CONSTANT, start_coordinate, end_coordinate)
 
 
 if __name__ == '__main__':
@@ -450,5 +465,6 @@ if __name__ == '__main__':
     lexer = CLexer(input_stream)
     token = lexer.get_next_token()
     while token is not None:
-        print token
+        sys.stderr.write(f"{token}\n")
+        sys.stdout.write(token.value)
         token = lexer.get_next_token()
