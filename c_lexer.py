@@ -88,6 +88,7 @@ class TokenEnum(Enum):
     STATIC = 'Static'
     COMMENT = 'Comment'
     WHITESPACE = 'Whitespace'
+    NUMBER_SIGN = '#'
 
 
 class Span(object):
@@ -208,6 +209,7 @@ class CLexer(object):
         self.current_token_elements = []
         self.ignore_continuation = False
         self.get_next_character()
+        self.waiting_tokens = []
 
     def match_value(self, value):
         if self.current_character:
@@ -272,6 +274,9 @@ class CLexer(object):
             start_coordinate, end_coordinate))
 
     def get_next_token(self):
+        if self.waiting_tokens:
+            return self.waiting_tokens.pop(0)
+
         # Eat whitespace
         token = self.skip_whitespace()
         if token:
@@ -344,13 +349,21 @@ class CLexer(object):
         """
         Read a preprocessor directive, assumes we are already on the '#'.
         """
-        self.match_value('#')
-        self.skip_inline_whitespace()
+        if self.current_character:
+            if self.current_character.value == "#":
+                current_token = self.create_token(TokenEnum.NUMBER_SIGN)
+            else:
+                raise Exception('unexpected character "%s", expected "%s"' % (self.current_character.value, value))
+        else:
+            raise Exception('unexpected end of file, expected character "%s"' % value)
+
+        self.waiting_tokens.append(self.skip_inline_whitespace())
         self.current_token_elements = self.read_word()
         while self.current_value() != '\n' and self.current_value() != EndMarker:
             self.current_token_elements.append(self.current_character)
             self.get_next_character()
-        return self.create_token(TokenEnum.PREPROCESSOR_DIRECTIVE)
+        self.waiting_tokens.append(self.create_token(TokenEnum.PREPROCESSOR_DIRECTIVE))
+        return current_token
 
     def read_block_comment(self):
         self.ignore_continuation = True

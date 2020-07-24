@@ -54,12 +54,17 @@ class FileCharacterInput(BaseCharacterInput):
         super(FileCharacterInput, self).__init__(file_name)
         self.input_file = input_file
         self.file_name = file_name
+        self.waiting_characters = ""
 
     def read_character(self):
-        character = self.input_file.read(1)
-        if character == '':
+        if self.waiting_characters:
+            result, self.waiting_characters = self.waiting_characters[0], self.waiting_characters[1:]
+            return result
+        self.waiting_characters = self.input_file.read(1)
+        if self.waiting_characters == '':
             return None
-        return character
+        result, self.waiting_characters = self.waiting_characters[0], self.waiting_characters[1:]
+        return result
 
 
 class StringCharacterInput(BaseCharacterInput):
